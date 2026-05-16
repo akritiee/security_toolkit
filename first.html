@@ -1,0 +1,265 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Security Hub | Final Project</title>
+        <style>
+            :root {
+                --hacker-green: #89b694; 
+                --deep-black: #5f615f;
+                --purple-card: #4b2c91;
+                --neon-glow: rgba(137, 182, 148, 0.4);
+            }
+
+            body, html {
+                margin: 0; padding: 0; height: 100%;
+                font-family: 'Courier New', monospace;
+                background-color: #000;
+                color: var(--hacker-green);
+                overflow: hidden;
+            }
+
+            /* --- Animations --- */
+            .scanline {
+                width: 100%; height: 100px; z-index: 999;
+                background: linear-gradient(0deg, rgba(137, 182, 148, 0) 0%, rgba(137, 182, 148, 0.1) 50%, rgba(137, 182, 148, 0) 100%);
+                opacity: 0.2; position: absolute; bottom: 100%;
+                animation: scanning 4s linear infinite; pointer-events: none;
+            }
+            @keyframes scanning { 0% { bottom: 100%; } 100% { bottom: -100px; } }
+
+            @keyframes blink { 50% { opacity: 0; } }
+
+            /* --- Layout --- */
+            .main-container { display: flex; width: 100vw; height: 100vh; }
+
+            .login-part {
+                flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+                background: linear-gradient(180deg, #1a1a1a 0%, #000 100%);
+                border-right: 2px solid var(--hacker-green); padding: 40px;
+            }
+
+            .terminal-header { font-size: 1.8rem; letter-spacing: 4px; margin-bottom: 40px; }
+
+            .btn {
+                width: 100%; padding: 12px; margin: 10px 0;
+                background: transparent; color: var(--hacker-green);
+                border: 1px solid var(--hacker-green); cursor: pointer;
+                font-family: inherit; text-transform: uppercase;
+                transition: 0.3s;
+            }
+            .btn:hover { background: rgba(137, 182, 148, 0.1); box-shadow: 0 0 10px var(--neon-glow); }
+
+            .card-part {
+                flex: 1; background: var(--deep-black);
+                display: flex; justify-content: center; align-items: center;
+                position: relative;
+            }
+
+            .stack-area { position: relative; width: 320px; height: 450px; }
+
+            /* --- Card Styling --- */
+            .card {
+                position: absolute; width: 100%; height: 100%;
+                background: var(--purple-card); border: 2px solid var(--hacker-green);
+                box-shadow: 10px 10px 25px rgba(0,0,0,0.6); border-radius: 8px;
+                overflow: hidden; transition: all 0.5s ease;
+            }
+
+            .card:nth-child(6) { transform: rotate(-8deg) translate(-15px, 10px); z-index: 1; }
+            .card:nth-child(5) { transform: rotate(-5deg) translate(-10px, 5px); z-index: 2; }
+            .card:nth-child(4) { transform: rotate(-2deg) translate(-5px, 0px); z-index: 3; }
+            .card:nth-child(3) { transform: rotate(0deg); z-index: 4; }
+            .card:nth-child(2) { transform: rotate(2deg) translate(5px, -5px); z-index: 5; }
+            .card:nth-child(1) { transform: rotate(5deg) translate(10px, -10px); z-index: 6; }
+
+            .card-header-label {
+                background: rgba(0,0,0,0.85); color: var(--hacker-green);
+                padding: 15px; text-align: center; font-weight: bold;
+                cursor: pointer; border-bottom: 1px solid var(--hacker-green);
+            }
+
+            .card-body {
+                height: calc(100% - 50px); display: flex; flex-direction: column;
+                justify-content: center; align-items: center; text-align: center; cursor: pointer;
+            }
+
+            /* --- Cyber Card Internal Styles --- */
+            .cyber-content { padding: 15px; text-align: left; width: 90%; }
+            .serial-no { font-size: 10px; color: var(--hacker-green); letter-spacing: 2px; display: block; margin-bottom: 5px; }
+            .header-text h3 { margin: 0; color: #fff; font-size: 1.1rem; }
+            .card-inner-body { 
+                background: rgba(0, 0, 0, 0.4); border: 1px solid var(--hacker-green); 
+                border-radius: 4px; padding: 12px; margin-top: 10px; 
+            }
+            .status-badge { color: var(--hacker-green); font-size: 11px; margin-bottom: 5px; }
+            .terminal-text { font-size: 11px; color: #cbd5e1; line-height: 1.4; text-align: left; }
+            .cursor { animation: blink 1s infinite; color: var(--hacker-green); font-weight: bold; }
+
+            /* --- States --- */
+            .locked { filter: blur(15px); opacity: 0.4; pointer-events: none; }
+            .hidden { display: none !important; }
+
+            #web-overlay {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: #000; z-index: 2000; display: none;
+            }
+            #close-overlay {
+                position: absolute; top: 20px; right: 20px; padding: 10px 20px;
+                background: #ff4444; color: white; border: none; cursor: pointer; z-index: 2001;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div class="scanline"></div>
+
+        <div id="web-overlay">
+            <button id="close-overlay">EXIT TOOL [X]</button>
+            <iframe id="overlay-frame" style="width:100%; height:100%; border:none;"></iframe>
+        </div>
+
+        <div class="main-container">
+            <!-- Sidebar / Login -->
+            <div class="login-part">
+                <div class="terminal-header">SYS.ADMIN_PORTAL</div>
+                <div id="auth-box" style="width: 80%;">
+                    <button class="btn" id="btn-google">Authenticate: Google_OAuth</button>
+                    <button class="btn" id="btn-bypass">Bypass: Guest_Mode</button>
+                </div>
+                <div id="user-info" class="hidden">
+                    <p>> SESSION_AUTHENTICATED</p>
+                    <p>> WELCOME_OPERATOR</p>
+                    <button class="btn" style="color: #ff4444; border-color: #ff4444;" onclick="location.reload()">Terminate</button>
+                </div>
+            </div>
+
+            <!-- Card Stack Section -->
+            <div class="card-part">
+                <div class="stack-area">
+                    
+                    <!-- Module 6: Image Scanner -->
+                    <div class="card locked" data-link="Image.html">
+                        <div class="card-header-label">SKIP ❯ IMAGE SCANNER</div>
+                        <div class="card-body"><h3>Image Scanner</h3><p>[ Launch ]</p></div>
+                    </div>
+
+                    <!-- Module 5: Navigation -->
+                    <div class="card locked" data-link="map.html">
+                        <div class="card-header-label">SKIP ❯ NAVIGATION</div>
+                        <div class="card-body"><h3>Map Navigation</h3><p>[ Launch ]</p></div>
+                    </div>
+
+                    <!-- Module 4: AI Detection (Cyber Card Style) -->
+                    <div class="card locked" data-link="ai-detect.html">
+                        <div class="card-header-label">SKIP ❯ AI DETECT</div>
+                        <div class="card-body">
+                            <div class="cyber-content">
+                                <span class="serial-no">04 / CYBER CO-PILOT</span>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--hacker-green);">
+                                        <path d="M12 8V4m0 0H8m4 0h4M7 13v-3a5 5 0 0 1 10 0v3M5 20h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2Z"/>
+                                    </svg>
+                                    <h3>AI Assistant</h3>
+                                </div>
+                                <div class="card-inner-body">
+                                    <p class="status-badge">● Online</p>
+                                    <div class="terminal-text">
+                                        Analyzing image_814c43.jpg for deepfake signatures...
+                                        <span class="cursor">_</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Module 3: Threat Check -->
+                    <div class="card locked" data-link="threat.html">
+                        <div class="card-header-label">SKIP ❯ IP/DOMAIN CHECK</div>
+                        <div class="card-body"><h3>Threat Intelligence</h3><p>[ Launch ]</p></div>
+                    </div>
+
+                    <!-- Module 2: WiFi Scan -->
+                    <div class="card locked" data-link="wifi.html">
+                        <div class="card-header-label">SKIP ❯ WIFI SCAN</div>
+                        <div class="card-body"><h3>WiFi Auditor</h3><p>[ Launch ]</p></div>
+                    </div>
+
+                    <!-- Module 1: Security Audit -->
+                    <div class="card locked" data-link="system.html">
+                        <div class="card-header-label">SKIP ❯ SECURITY AUDIT</div>
+                        <div class="card-body"><h3>Security Audit</h3><p>[ Launch ]</p></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <form action="/save-intel" method="POST">
+        <input type="text" name="query" placeholder="Enter IP or Domain">
+        <select name="type">
+            <option value="ip">IP</option>
+            <option value="domain">Domain</option>
+        </select>
+        <button type="submit">Run Security Scan</button>
+    </form>
+        <!-- Logic -->
+        <script type="module">
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
+            import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyB21fl6jJWdTIXg_S5jb6OdXVyoZmxXrAk",
+                authDomain: "security-toolkit-49438.firebaseapp.com",
+                projectId: "security-toolkit-49438",
+                appId: "1:1000824956753:web:34bba5bcdc1543be2d9570"
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const cards = document.querySelectorAll('.card');
+
+            function unlock() {
+                document.getElementById('auth-box').classList.add('hidden');
+                document.getElementById('user-info').classList.remove('hidden');
+                cards.forEach(c => c.classList.remove('locked'));
+            }
+
+            // Auth Listeners
+            document.getElementById('btn-google').addEventListener('click', async () => {
+                try {
+                    await signInWithPopup(auth, new GoogleAuthProvider());
+                    unlock();
+                } catch (e) { alert("Authentication Failed"); }
+            });
+
+            document.getElementById('btn-bypass').addEventListener('click', unlock);
+
+            // Card Interaction
+            cards.forEach(card => {
+                // "Skip" functionality (Throw card away)
+                card.querySelector('.card-header-label').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    card.style.transform = 'translateX(250%) rotate(45deg)';
+                    card.style.opacity = '0';
+                    setTimeout(() => card.classList.add('hidden'), 500);
+                });
+
+                // "Launch" functionality (Open in Iframe)
+                card.querySelector('.card-body').addEventListener('click', () => {
+                    const link = card.getAttribute('data-link');
+                    if (link) {
+                        document.getElementById('overlay-frame').src = link;
+                        document.getElementById('web-overlay').style.display = 'block';
+                    }
+                });
+            });
+
+            // Close Overlay
+            document.getElementById('close-overlay').addEventListener('click', () => {
+                document.getElementById('web-overlay').style.display = 'none';
+                document.getElementById('overlay-frame').src = '';
+            });
+        </script>
+    </body>
+    </html>

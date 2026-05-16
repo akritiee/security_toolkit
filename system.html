@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Audit</title>
+  <style>
+    body {
+      font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #dda9f0 0%, #a8e6cf 50%, #ffd3a5 100%);
+      min-height: 100vh;
+      height: 100%;
+      color: #333;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      font-size: 3em;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .subtitle {
+      font-size: 18px;
+      color: #555;
+      font-style: italic;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      padding: 30px;
+    }
+
+    section {
+      margin-bottom: 30px;
+    }
+
+    .audit-form {
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: inset 0 2px 4px rgba(169, 23, 23, 0.1);
+      border-left: 5px solid rgb(140, 29, 29);
+      border-right: 5px solid rgb(193, 9, 9);
+    }
+
+    .audit-form h3 {
+      margin-top: 40;
+      color: #0078D7;
+      font-size: 1.5em;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      margin: 15px 0;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    label input[type="checkbox"] {
+      margin-right: 1px;
+      transform: scale(1.2);
+    }
+
+    button {
+      margin-top: 1px;
+      padding: 12px 25px;
+      background: linear-gradient(45deg, #0078D7, #005a9e);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+      font-size: 16px;
+      box-shadow: 0 5px 8px rgba(0, 0, 0, 0.2);
+
+    }
+
+    .description {
+      font-size: 16px;
+      color: #555;
+      text-align: center;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 5px solid rgb(163, 163, 163);
+      border-right: 5px solid rgb(163, 163, 163);
+
+    }
+
+    hr {
+      margin: 30px 0;
+      border: none;
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    #pw-toggle {
+      display: none;
+    }
+
+    /* the label that the user clicks */
+    .pw-label {
+      display: flex;
+      align-items: center;
+      margin: 1px 0;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* create a visual checkbox using ::before */
+    .pw-label::before {
+      content: "";
+      display: inline-block;
+      width: 13px;
+      height: 13px;
+      border-radius: 4px;
+      margin-right: 4px;
+      border: 1px solid #666565;
+      box-sizing: border-box;
+      background: white;
+      transform: translateY(1px);
+      transform: scale(1.2);
+    }
+
+    /* checked state (when hidden checkbox is checked) */
+    #pw-toggle:checked+.pw-label::before {
+      background: linear-gradient(45deg, #0078d7, #005a9e);
+      border-color: #005a9e;
+      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.12);
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 12px 10px;
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+      /* Reduced from 15px */
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* slide-down panel */
+    .password-panel {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transform: translateY(-8px);
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      margin-left: 26px;
+      margin: 0;
+      /* Added to remove any default margins and ensure no gap */
+    }
+
+    /* show panel when controller checked */
+    #pw-toggle:checked~.password-panel {
+      max-height: 150px;
+      /* enough to contain inputs */
+      opacity: 1;
+      margin-bottom: 10px;
+      transform: translateY(0);
+    }
+
+    /* inside panel */
+    .pw-input {
+      margin-top: 5px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .pw-input input[type="password"] {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #aaa;
+      width: 60%;
+    }
+
+    .pw-input button {
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: linear-gradient(45deg, #0078d7, #005a9e);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* small helper text */
+    .password-panel p {
+      font-size: 12px;
+      color: #444;
+      margin-top: 8px;
+      margin-bottom: 0;
+    }
+
+    .results-section h5 {
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 1.8em;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .results-section h5::before {
+      content: '\f0e7';
+      /* FontAwesome icon */
+      font-family: 'Font Awesome 6 Free';
+      margin-right: 10px;
+      color: #0078D7;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 16px;
+      background-color: rgba(255, 255, 255, 0.95);
+      margin: 0 auto;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    th,
+    td {
+      border: 1px solid #0c3890;
+      padding: 12px;
+      text-align: left;
+    }
+
+    th {
+      background: linear-gradient(45deg, #f4c1c1, #ffb3ba);
+      color: #333;
+      font-weight: bold;
+      position: relative;
+    }
+
+    th::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: #0078D7;
+    }
+
+    tr:nth-child(even) {
+      background-color: rgba(232, 246, 251, 0.8);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 14px;
+      color: #777;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      border-left: 5px solid rgb(163, 163, 163);
+      border-right: 5px solid rgb(163, 163, 163);
+    }
+
+
+    .quote {
+      font-style: italic;
+      margin-top: 10px;
+      color: #666;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>System Audit</h1>
+    <p class="subtitle">Ensure your system's security and performance with our comprehensive audit tool.</p>
+  </header>
+
+  <main>
+    <section class="audit-form">
+      <h3> Select Audit Checks</h3>
+      <form>
+        <label><input type="checkbox" name="audit" value="firewall"> Check Firewall</label>
+        <label><input type="checkbox" name="audit" value="ports"> Check Open Ports</label>
+
+        <input type="checkbox" id="pw-toggle" style="display:none;">
+
+        <label for="pw-toggle" class="pw-label">
+          Check your password
+        </label>
+
+        <div class="password-panel" aria-hidden="true">
+          <div class="pw-input">
+            <input type="password" id="userPassword" name="userPassword" placeholder="Enter your password" />
+            <button type="button" id="check-password-btn">Check</button>
+          </div>
+          <p style="font-size:12px; color:#444; margin-top:8px;">Enter password to run password checks.</p>
+        </div>
+        <div id="password-result" style="margin-left:26px; font-size:14px; margin-top:10px;"></div>
+
+        <label><input type="checkbox" name="audit" value="browser"> Check your browser</label>
+
+        <button type="submit"> Run Audit</button>
+
+      </form>
+    </section>
+
+    <section class="description">
+      <p>
+        Select the checks you want to perform. The audit will return details about your system firewall, update status,
+        and open ports. Stay secure and keep your system optimized!
+      </p>
+      <p class="quote">"Security is not a product, but a process." – Bruce Schneier</p>
+    </section>
+
+    <hr>
+
+    <section class="results-section">
+      <h5>Audit Results</h5>
+      <table>
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td> Firewall</td>
+            <td> Enabled</td>
+          </tr>
+
+          <tr>
+            <td>Ports</td>
+            <td> None open</td>
+          </tr>
+        </tbody>
+      </table>
+      <br>
+      <a href="/templates/first.html">Go to homepage</a>
+    </section>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const form = document.querySelector("main section.audit-form form");
+        const resultsBody = document.querySelector(".results-section tbody");
+
+        // ---------------------------
+        // REAL browser capability check
+        // ---------------------------
+        function getBrowserInfo() {
+          // real cookie test
+          document.cookie = "audit_test=1; path=/";
+          const cookiesEnabled = document.cookie.indexOf("audit_test=") !== -1;
+
+          return {
+            userAgent: navigator.userAgent,
+            https: location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1",
+            cookiesEnabled: cookiesEnabled,
+            jsEnabled: true
+          };
+        }
+
+        // ---------------------------
+        // Render audit results
+        // ---------------------------
+        function renderReport(report) {
+          if (!report || report.error) {
+            resultsBody.innerHTML =
+              `<tr><td colspan="2">Error: ${report?.error || "Unknown error"}</td></tr>`;
+            return;
+          }
+
+          resultsBody.innerHTML = "";
+
+          (report.checks || []).forEach(c => {
+            const tr = document.createElement("tr");
+
+            const nameTd = document.createElement("td");
+            nameTd.textContent = c.name || "Check";
+
+            const statusTd = document.createElement("td");
+            statusTd.textContent = (c.status || "").toUpperCase();
+
+            if (typeof c.score === "number") {
+              const scoreDiv = document.createElement("div");
+              scoreDiv.style.fontSize = "12px";
+              scoreDiv.style.marginTop = "4px";
+
+              const label = document.createElement("strong");
+              label.textContent = "Safety Score: ";
+
+              const value = document.createElement("span");
+              value.textContent = `${c.score}/100`;
+
+              scoreDiv.appendChild(label);
+              scoreDiv.appendChild(value);
+              statusTd.appendChild(scoreDiv);
+            }
+
+
+            if (c.details) {
+              const d = document.createElement("div");
+              d.style.fontSize = "12px";
+              d.style.color = "#444";
+              d.textContent = c.details;
+              statusTd.appendChild(document.createElement("br"));
+              statusTd.appendChild(d);
+            }
+
+            tr.appendChild(nameTd);
+            tr.appendChild(statusTd);
+            resultsBody.appendChild(tr);
+          });
+        }
+
+        // ---------------------------
+        // Initial system audit (auto-run)
+        // ---------------------------
+        async function runSystemAudit() {
+          const payload = {
+            checks: ["firewall", "ports", "antivirus", "browser"],
+            browser: getBrowserInfo()
+          };
+
+          const res = await fetch("/api/audit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const result = await res.json();
+          renderReport(result);
+        }
+
+        runSystemAudit();
+
+        // ---------------------------
+        // Handle audit form submit
+        // ---------------------------
+        form.addEventListener("submit", (ev) => {
+          ev.preventDefault();
+
+          const selected = Array.from(
+            form.querySelectorAll('input[name="audit"]:checked')
+          ).map(c => c.value);
+
+          const passwordToggle = document.getElementById("pw-toggle");
+          let userPassword = "";
+
+          if (passwordToggle && passwordToggle.checked) {
+            selected.push("password");
+            userPassword = document.getElementById("userPassword").value;
+          }
+
+          resultsBody.innerHTML =
+            "<tr><td colspan='2'>Running audit... please wait</td></tr>";
+
+          fetch("/api/audit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              checks: selected,
+              password: userPassword,
+              browser: getBrowserInfo()
+            })
+          })
+            .then(resp => resp.json())
+            .then(json => renderReport(json))
+            .catch(err => {
+              resultsBody.innerHTML =
+                `<tr><td colspan='2'>Error: ${err.message}</td></tr>`;
+            });
+        });
+
+        // ---------------------------
+        // Audit score summary
+        // ---------------------------
+        fetch("/api/audit/summary")
+          .then(r => r.json())
+          .then(s => {
+            if (!s || s.error) return;
+
+            const summaryRow = document.createElement("tr");
+            summaryRow.innerHTML = `
+        <td><strong>Audit Score</strong></td>
+        <td><strong>${s.score}</strong> — ${s.summary}</td>
+      `;
+            resultsBody.prepend(summaryRow);
+          });
+
+        // ---------------------------
+        // Password-only check
+        // ---------------------------
+        document.getElementById("check-password-btn")
+          ?.addEventListener("click", () => {
+            const password = document.getElementById("userPassword").value;
+            const resultDiv = document.getElementById("password-result");
+
+            if (!password) {
+              resultDiv.textContent = "Please enter a password.";
+              resultDiv.style.color = "red";
+              return;
+            }
+
+            fetch("/api/audit", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                checks: ["password"],
+                password: password
+              })
+            })
+              .then(resp => resp.json())
+              .then(json => {
+                const pwCheck = (json.checks || []).find(c => c.name === "Password Policy");
+                if (!pwCheck) {
+                  resultDiv.textContent = "Password check failed.";
+                  resultDiv.style.color = "red";
+                  return;
+                }
+
+                resultDiv.textContent = pwCheck.details;
+                resultDiv.style.color =
+                  pwCheck.status === "ok" ? "green" :
+                    pwCheck.status === "warning" ? "orange" : "red";
+              })
+              .catch(err => {
+                resultDiv.textContent = `Error: ${err.message}`;
+                resultDiv.style.color = "red";
+              });
+          });
+      });
+    </script>
+
+  </main>
+
+  <footer>
+    <p> | Secure your system today! | </p>
+    <p class="quote">Powered by creativity and security best practices.</p>
+  </footer>
+</body>
+
+</html>

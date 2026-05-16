@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionScan | Global Map</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body, html { height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+
+        #container { display: flex; height: 100vh; width: 100vw; }
+
+        /* Sidebar similar to Google Maps */
+        #sidebar {
+            width: 350px;
+            height: 100%;
+            background: #ffffff;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        /* Map fills the rest of the screen */
+        #map { flex-grow: 1; height: 100%; }
+
+        /* Styling for Sidebar Content */
+        .search-header { margin-bottom: 20px; }
+        .search-header h2 { color: #1a73e8; font-size: 22px; }
+        
+        .result-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .result-item:hover { background: #f8f9fa; }
+        .result-item h4 { color: #202124; margin-bottom: 5px; }
+        .result-item p { font-size: 13px; color: #70757a; }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 15px;
+            text-decoration: none;
+            color: #1a73e8;
+            font-weight: 500;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <a href="index.html" class="back-btn">← Back to Scanner</a>
+            <div class="search-header">
+                <h2>Image Matches</h2>
+                <p>Locations found in database</p>
+            </div>
+
+            <div id="results-list">
+                <div class="result-item" onclick="focusLocation(51.505, -0.09, 'London Match')">
+                    <h4>London Match</h4>
+                    <p>Matches: 85% similarity</p>
+                    <p>Coordinates: 51.505, -0.09</p>
+                </div>
+                <div class="result-item" onclick="focusLocation(40.7128, -74.0060, 'New York Match')">
+                    <h4>New York Match</h4>
+                    <p>Matches: 92% similarity</p>
+                    <p>Coordinates: 40.7128, -74.0060</p>
+                </div>
+                <div class="result-item" onclick="focusLocation(48.8566, 2.3522, 'Paris Match')">
+                    <h4>Paris Match</h4>
+                    <p>Matches: 78% similarity</p>
+                    <p>Coordinates: 48.8566, 2.3522</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Map -->
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // 1. Initialize the Map
+        const map = L.map('map').setView([20, 0], 2); // Start with a world view
+
+        // 2. Add OpenStreetMap Tiles (the "skin" of the map)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // 3. Add default markers
+        const markers = [
+            { lat: 51.505, lng: -0.09, name: "London Match" },
+            { lat: 40.7128, lng: -74.006, name: "New York Match" },
+            { lat: 48.8566, lng: 2.3522, name: "Paris Match" }
+        ];
+
+        markers.forEach(m => {
+            L.marker([m.lat, m.lng]).addTo(map).bindPopup(m.name);
+        });
+
+        // 4. Function to fly to a location (Google Maps style transition)
+        function focusLocation(lat, lng, title) {
+            map.flyTo([lat, lng], 13, {
+                animate: true,
+                duration: 1.5
+            });
+            
+            // Open popup after moving
+            setTimeout(() => {
+                L.marker([lat, lng]).addTo(map).bindPopup(title).openPopup();
+            }, 1600);
+        }
+    </script>
+</body>
+</html>

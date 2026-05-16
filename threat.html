@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Threat</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #353535;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    select, input[type="text"] {
+      padding: 10px;
+      margin: 10px 0;
+      width: 250px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: pink;
+      border: none;
+      border-radius: 5px;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: hotpink;
+    }
+
+    #result-box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #444;
+      width: 350px;
+      border-radius: 8px;
+      text-align: left;
+      font-size: 14px;
+      min-height: 80px;
+      word-break: break-word;
+    }
+
+    a {
+      color: rgb(94, 89, 247);
+      text-decoration: underline;
+      margin-top: 20px;
+      display: inline-block;
+    }
+
+    .muted { color: #ddd; font-size: 13px; }
+  </style>
+</head>
+
+<body>
+  <h1>Threat</h1>
+
+  <p>Select what you want to check:</p>
+
+  <select id="type">
+    <option value="">-- Choose --</option>
+    <option value="ip">IP Address</option>
+    <option value="domain">Domain</option>
+  </select>
+
+  <input id="query" type="text" placeholder="Enter ">
+  
+
+  <button id="submitBtn" onclick="checkThreat()">Submit</button>
+
+  <div id="result-box">
+    <span class="muted">Waiting for input...</span>
+  </div>
+
+  <a href="/first.html">Go to Home</a>
+
+  <script>
+    async function checkThreat() {
+      const q = document.getElementById("query").value;
+      const t = document.getElementById("type").value;
+      const output = document.getElementById("result-box");
+      const btn = document.getElementById("submitBtn");
+
+      if (!q.trim() || !t.trim()) {
+        alert("Please enter input & choose type.");
+        return;
+      }
+
+      // UI: show checking state and prevent double-clicks
+      output.innerHTML = "Checking...";
+      btn.disabled = true;
+      btn.style.opacity = 0.6;
+
+      try {
+        const res = await fetch("/api/intel/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: q, type: t })
+        });
+
+        // parse JSON even if status != 200 so we can show message
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          // show error from backend if present
+          const err = data.error || (`Server returned ${res.status}`);
+          output.innerHTML = `<b>Error:</b> ${escapeHtml(err)}`;
+          return;
+        }
+
+        // show results (use 'details' — matches backend)
+        output.innerHTML = `
+          <b>Query:</b> ${escapeHtml(data.query || q)}<br>
+          <b>Type:</b> ${escapeHtml(data.type || t)}<br>
+          <b>Result:</b> ${escapeHtml(data.result || 'unknown')}<br>
+          <b>Details:</b> ${escapeHtml(data.details || '—')}<br>
+          <b>Source:</b> ${escapeHtml(data.source || '—')}<br>
+          <b>Time:</b> ${escapeHtml(data.timestamp || '')}
+        `;
+      } catch (err) {
+        // network or unexpected error
+        output.innerHTML = `<b>Network error:</b> ${escapeHtml(err.message || String(err))}`;
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = 1;
+      }
+    }
+
+    // small helper to avoid injecting raw HTML
+    function escapeHtml(str) {
+      if (!str && str !== 0) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+
+</body>
+</html>

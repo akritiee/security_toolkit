@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionScan | All-in-One Image Search</title>
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --primary: #00d2ff;
+            --secondary: #0072ff;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --gray: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header h1 span {
+            color: var(--primary);
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--gray);
+            margin-bottom: 40px;
+        }
+
+        /* Upload Area */
+        .upload-container {
+            background: var(--card);
+            border: 2px dashed #334155;
+            border-radius: 20px;
+            padding: 60px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-container:hover {
+            border-color: var(--primary);
+            background: #24334d;
+        }
+
+        .upload-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .upload-container p span {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        /* Preview & Animation */
+        .hidden { display: none; }
+
+        .scanner-box {
+            position: relative;
+            display: inline-block;
+            margin-top: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 4px solid var(--card);
+        }
+
+        #image-preview {
+            max-width: 100%;
+            max-height: 400px;
+            display: block;
+        }
+
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--primary);
+            box-shadow: 0 0 20px var(--primary), 0 0 40px var(--primary);
+            animation: scan 2.5s infinite ease-in-out;
+            z-index: 10;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        /* Buttons & Feedback */
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 15px 35px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-top: 25px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.3);
+        }
+
+        .loader {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .result-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #ef4444;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Vision<span>Scan</span></h1>
+            <p>Advanced Perceptual Image Recognition</p>
+        </header>
+
+        <main>
+            <!-- Drag & Drop Zone -->
+            <div class="upload-container" id="drop-zone">
+                <span class="upload-icon">📂</span>
+                <p>Drop your image here or <span>browse files</span></p>
+                <input type="file" id="file-input" hidden accept="image/*">
+            </div>
+
+            <!-- Preview Section -->
+            <div id="preview-section" class="hidden">
+                <div class="scanner-box">
+                    <img id="image-preview" src="" alt="User upload">
+                    <div id="laser" class="hidden"></div>
+                </div>
+                <br>
+                <button class="btn" id="search-btn">Analyze Image</button>
+                <button class="btn" style="background: #334155;" onclick="location.reload()">Cancel</button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-area" class="hidden">
+                <div class="loader" id="spinner"></div>
+                <div id="status-text">Comparing fingerprints across database...</div>
+                <div id="final-result" class="hidden">
+                    <div class="result-card">
+                        <strong>Analysis Complete:</strong>
+                        <p>No identical matches found in the public index.</p>
+                        <small>Connect to a Backend API (Flask/FastAPI) to enable live web searching.</small>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        /* --- JAVASCRIPT LOGIC --- */
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const previewSection = document.getElementById('preview-section');
+        const imagePreview = document.getElementById('image-preview');
+        const searchBtn = document.getElementById('search-btn');
+        const laser = document.getElementById('laser');
+        const resultsArea = document.getElementById('results-area');
+        const finalResult = document.getElementById('final-result');
+        const spinner = document.getElementById('spinner');
+        const statusText = document.getElementById('status-text');
+
+        // Handle Click to Upload
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // Handle File Selection
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                loadImage(this.files[0]);
+            }
+        });
+
+        // Handle Drag & Drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = "var(--primary)";
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = "#334155";
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length) {
+                loadImage(e.dataTransfer.files[0]);
+            }
+        });
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                dropZone.classList.add('hidden');
+                previewSection.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Simulate Search Process
+        searchBtn.addEventListener('click', () => {
+            // Start Animation
+            laser.classList.add('scan-line');
+            searchBtn.disabled = true;
+            searchBtn.innerText = "Scanning...";
+            
+            // Show Processing Area
+            resultsArea.classList.remove('hidden');
+
+            // Simulate Network Delay
+            setTimeout(() => {
+                laser.classList.remove('scan-line');
+                spinner.classList.add('hidden');
+                statusText.innerText = "Comparison Finished.";
+                finalResult.classList.remove('hidden');
+                searchBtn.innerText = "Scan Complete";
+            }, 3500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wi-Fi Scan</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #272728;
+    }
+
+    h1 {
+      color: #f7f0f0;
+      font-family: 'Comic Sans MS', sans-serif;
+    }
+
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      background-color: #7e7f7f;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Comic Sans MS', sans-serif;
+    }
+
+    button:hover {
+      background-color: hsl(205, 13%, 49%);
+    }
+
+    p {
+      color: #ddd;
+      font-family: 'Comic Sans MS', sans-serif;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: rgb(230, 176, 176);
+    }
+
+    th, td {
+      border: 1px solid #090909;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #ecd7d7;
+      font-family: 'Comic Sans MS', sans-serif;
+    }
+
+    /* 🟢 Safe / 🔴 Unsafe / ⚪ Unknown row coloring */
+    tr.safe { background-color: #b3f3b3; }       /* light green */
+    tr.unsafe { background-color: #f7a3a3; }     /* light red */
+    tr.unknown { background-color: #f3e8a9; }    /* light yellow */
+
+    /* Badge styles */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .badge.safe { background-color: #28a745; }
+    .badge.unsafe { background-color: #dc3545; }
+    .badge.unknown { background-color: #ffc107; color: #000; }
+
+    a {
+      color: #a188e9;
+      font-family: 'Comic Sans MS', sans-serif;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Wi-Fi Scan</h1>
+    <button id="scan-wifi">🔍 Scan Network</button>
+  </header>
+
+  <main>
+    <p>Detect visible Wi-Fi networks and highlight open or unsecured ones.</p>
+
+    <table id="wifiTable">
+      <thead>
+        <tr>
+          <th>SSID</th>
+          <th>Signal</th>
+          <th>Status</th>
+          <th>Security</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody id="wifi-results">
+        <!-- Scan results will appear here -->
+      </tbody>
+    </table>
+
+    <br />
+    <a href="/templates/first.html">Go to Home</a>
+
+    <script>
+      function escapeHtml(s) {
+        if (!s && s !== 0) return "";
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      document.getElementById("scan-wifi").addEventListener("click", () => {
+        const results = document.getElementById("wifi-results");
+        results.innerHTML = '<tr><td colspan="5">Scanning…</td></tr>';
+
+        fetch("/api/wifi/scan")
+          .then(resp => {
+            if (!resp.ok) throw new Error("Server: " + resp.status);
+            return resp.json();
+          })
+          .then(json => {
+            const devices = json.devices || [];
+            results.innerHTML = "";
+            if (devices.length === 0) {
+              results.innerHTML =
+                '<tr><td colspan="5">No networks found or scanner unavailable.</td></tr>';
+              return;
+            }
+
+            devices.forEach(d => {
+              const tr = document.createElement("tr");
+              const v = d.verdict || "unknown";
+              tr.classList.add(v);
+
+              const sig = d.signal_value ?? d.signal ?? "N/A";
+
+              const badgeClass =
+                v === "safe" ? "safe" : v === "unsafe" ? "unsafe" : "unknown";
+              const badgeText =
+                v === "safe"
+                  ? "Safe"
+                  : v === "unsafe"
+                  ? "Unsafe"
+                  : "Unknown";
+
+              tr.innerHTML = `
+                <td>${escapeHtml(d.ssid)}</td>
+                <td>${escapeHtml(String(sig))}</td>
+                <td>${d.open ? "Open" : "Available"}</td>
+                <td>${escapeHtml(d.security || "")}</td>
+                <td>
+                  <span class="badge ${badgeClass}">${badgeText}</span>
+                  <div style="font-size:12px;color:#222">${escapeHtml(d.reason)}</div>
+                </td>
+              `;
+              results.appendChild(tr);
+            });
+          })
+          .catch(err => {
+            results.innerHTML = `<tr><td colspan="5">Error: ${escapeHtml(
+              err.message || String(err)
+            )}</td></tr>`;
+          });
+      });
+    </script>
+  </main>
+
+  <footer>
+    <p>Secure your system today!</p>
+    <p class="quote">Powered by creativity and security best practices.</p>
+  </footer>
+</body>
+</html>
